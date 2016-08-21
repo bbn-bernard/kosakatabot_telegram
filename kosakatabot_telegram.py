@@ -8,6 +8,9 @@ import time
 import urllib2
 import yaml
 
+# ref: https://github.com/har07/PySastrawi
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+
 try:
     with open('config.yml') as f:
         CONFIG = yaml.load(f)
@@ -22,6 +25,13 @@ assert API_TOKEN, 'Telegram api token not found.'
 
 BASE_URL = 'https://api.telegram.org/bot%s' % (API_TOKEN)
 
+def create_stemmer():
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
+
+    return stemmer
+    
+STEMMER = create_stemmer()
 
 def get_dict():
     data_fn = r'data/kbbi_dataset.csv'
@@ -30,8 +40,8 @@ def get_dict():
         df = pd.read_csv(data_fn)
         df = df.astype(str)
     except IOError:
-        print 'Make sure kbbi dataset available in "data" folder\n'
-              'You can clone it from this url:\n'
+        print 'Make sure kbbi dataset available in "data" folder\n'\
+              'You can clone it from this url:\n'\
               'https://github.com/bbn-bernard/kbbi_dataset'
 
     return df
@@ -101,11 +111,22 @@ while True:
                         respond_text = '_%s_\n' % (w)
                         respond_text += '```text\n'
                         for k,v in enumerate(df['arti']):
-                            respond_text += '[%s] %s\n' % (k+1, v)
+                            respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
                         respond_text += '```'
                         
                     else:
-                        respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
+                        # NOTES: try using stemmer
+                        # this stemmer only support ascii
+                        w_ = STEMMER.stem(w.encode('ascii'))
+                        df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w_]
+                        if not df.empty:
+                            respond_text = '_%s_\n' % (w)
+                            respond_text += '```text\n'
+                            for k,v in enumerate(df['arti']):
+                                respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
+                            respond_text += '```'
+                        else:
+                            respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                                  'text': respond_text,
                                                  'parse_mode': 'Markdown',})
