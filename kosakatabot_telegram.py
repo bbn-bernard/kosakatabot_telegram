@@ -96,6 +96,7 @@ while True:
                         respond_text = 'kata yang diawali "%s" tidak ditemukan' % (word_to_search)
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                                  'text': respond_text})
+            # TODOS: refactor
             if '/arti' in msg_text:
                 respond_text = ''
                 if len(result['message']['text'].split(' ')) > 1:
@@ -112,6 +113,8 @@ while True:
                         respond_text += '```text\n'
                         for k,v in enumerate(df['arti']):
                             respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
+                        # TODOS: limit string len
+                        respond_text = respond_text[:4000] + '...'
                         respond_text += '```'
                         
                     else:
@@ -124,9 +127,12 @@ while True:
                             respond_text += '```text\n'
                             for k,v in enumerate(df['arti']):
                                 respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
+                            # TODOS: limit string len
+                            respond_text = respond_text[:4000] + '...'
                             respond_text += '```'
                         else:
                             respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
+
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                                  'text': respond_text,
                                                  'parse_mode': 'Markdown',})
