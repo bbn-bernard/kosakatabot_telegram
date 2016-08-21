@@ -1,0 +1,10 @@
+# python related
+*.pyc
+*.ipynb
+
+# config file
+config.yml
+
+# data folder
+#data/*
+.ipynb_checkpoints/*
