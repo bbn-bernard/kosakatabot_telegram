@@ -114,7 +114,8 @@ while True:
                         for k,v in enumerate(df['arti']):
                             respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
                         # TODOS: limit string len
-                        respond_text = respond_text[:4000] + '...'
+                        if len(respond_text) > 4000:
+                            respond_text = respond_text[:4000] + '...'
                         respond_text += '```'
                         
                     else:
@@ -128,7 +129,8 @@ while True:
                             for k,v in enumerate(df['arti']):
                                 respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
                             # TODOS: limit string len
-                            respond_text = respond_text[:4000] + '...'
+                            if len(respond_text) > 4000:
+                                respond_text = respond_text[:4000] + '...'
                             respond_text += '```'
                         else:
                             respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
