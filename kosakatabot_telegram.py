@@ -121,8 +121,12 @@ while True:
                     else:
                         # NOTES: try using stemmer
                         # this stemmer only support ascii
-                        w_ = STEMMER.stem(w.encode('ascii'))
-                        df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w_]
+                        try:
+                            w_ = STEMMER.stem(w.encode('ascii'))
+                            df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w_]
+                        except UnicodeEncodeError:
+                            df = pd.DataFrame()
+                        
                         if not df.empty:
                             respond_text = '_%s_\n' % (w)
                             respond_text += '```text\n'
