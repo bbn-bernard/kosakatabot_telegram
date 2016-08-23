@@ -84,15 +84,17 @@ while True:
         if result.get('message', False) and result['message'].get('entities', False):
             msg_text = result['message']['text']
             args = msg_text.split(' ')
-            command = args[0].lower()
+            raw_command = args[0].lower()
             if len(args) > 1:
                 query = args[1]
             else:
                 query = False
             
             timestamp = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print '%s, %s, %s' % (command, query, timestamp)
+            print '%s, %s, %s' % (raw_command, query, timestamp)
             
+            # format: command@botname
+            command = raw_command.split('@')[0]
             if command == '/help':
                 respond_text = '''Perintah yang tersedia:                
 /cari - cari kata yang diawali sepenggal kata
