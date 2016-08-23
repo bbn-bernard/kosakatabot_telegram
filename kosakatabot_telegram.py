@@ -25,6 +25,7 @@ API_TOKEN = CONFIG.get('telegram_token', False)
 assert API_TOKEN, 'Telegram api token not found.'
 
 BASE_URL = 'https://api.telegram.org/bot%s' % (API_TOKEN)
+MAX_QUERY_LEN = 50
 
 def create_stemmer():
     factory = StemmerFactory()
@@ -105,7 +106,7 @@ while True:
                 respond_text = ''
                 
                 # restrict len of word
-                if query and len(query) < 10:
+                if query and len(query) < MAX_QUERY_LEN:
                     w = query.lower()
                     df = DICT[DICT['kata_dasar'].str.startswith(w)]
                     if not df.empty:
@@ -120,7 +121,7 @@ while True:
                 respond_text = ''
                 
                 # restrict len of word
-                if query and len(query) < 20:
+                if query and len(query) < MAX_QUERY_LEN:
                     try:
                         w = STEMMER.stem(query.lower().encode('ascii'))
                         df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w]
