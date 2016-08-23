@@ -1,6 +1,7 @@
 
 # coding: utf-8
 
+import datetime as dt
 import json
 import pandas as pd
 import random
@@ -57,9 +58,16 @@ def json_request(method, payload):
     request = urllib2.Request(url, payload_text)
     request.add_header('Content-Type', 'application/json')
 
-    res = urllib2.urlopen(request)
-    
-    return res.read()
+    result = False
+    try:
+        res = urllib2.urlopen(request)
+        result = res.read()
+    except KeyboardInterrupt:
+        raise
+    except:
+        pass
+
+    return result
 
 last_update_id = 0
 
@@ -67,47 +75,56 @@ while True:
     body = json_request('getUpdates', {'offset': last_update_id})
     updates = json.loads(body)
 
-    assert updates['ok'], 'request failed.'
+    if not updates:
+        time.sleep(5)
+        continue
 
     respond_text = ''
     for result in updates['result']:
         if result.get('message', False) and result['message'].get('entities', False):
-            msg_text = result['message']['text'].replace('@kosakatabot', '')
-
-            if msg_text == '/help':
+            msg_text = result['message']['text']
+            args = msg_text.split(' ')
+            command = args[0].lower()
+            if len(args) > 1:
+                query = args[1]
+            else:
+                query = False
+            
+            timestamp = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print '%s, %s, %s' % (command, query, timestamp)
+            
+            if command == '/help':
                 respond_text = '''Perintah yang tersedia:                
 /cari - cari kata yang diawali sepenggal kata
 /arti - cari definisi kata menurut kbbi'''
                 json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                              'text': respond_text})
-            if '/cari' in msg_text:
+            if command == '/cari':
                 respond_text = ''
-                if len(result['message']['text'].split(' ')) > 1:
-                    word_to_search = result['message']['text'].split(' ')[1]
-                else:
-                    # don't process this
-                    word_to_search = 'xxxxxxxxxxxxxxxxxxxx'
+                
                 # restrict len of word
-                if len(word_to_search) < 10:
-                    df = DICT[DICT['kata_dasar'].str.startswith(word_to_search)]
+                if query and len(query) < 10:
+                    w = query.lower()
+                    df = DICT[DICT['kata_dasar'].str.startswith(w)]
                     if not df.empty:
                         respond_text = random.choice(df['kata_dasar'].values)
                     else:
-                        respond_text = 'kata yang diawali "%s" tidak ditemukan' % (word_to_search)
+                        respond_text = 'kata yang diawali "%s" tidak ditemukan' % (query)
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
-                                                 'text': respond_text})
+                                                 'text': respond_text,
+                                                 'reply_to_message_id': result['message']['message_id'],})
             # TODOS: refactor
-            if '/arti' in msg_text:
+            if command == '/arti':
                 respond_text = ''
-                if len(result['message']['text'].split(' ')) > 1:
-                    word_to_search = result['message']['text'].split(' ')[1]
-                else:
-                    # don't process this
-                    word_to_search = 'xxxxxxxxxxxxxxxxxxxx'
+                
                 # restrict len of word
-                if len(word_to_search) < 20:
-                    w = word_to_search.lower().strip()
-                    df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w]
+                if query and len(query) < 20:
+                    try:
+                        w = STEMMER.stem(query.lower().encode('ascii'))
+                        df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w]
+                    except:
+                        df = pd.DataFrame()    
+                    
                     if not df.empty:
                         respond_text = '_%s_\n' % (w)
                         respond_text += '```text\n'
@@ -117,27 +134,8 @@ while True:
                         if len(respond_text) > 4000:
                             respond_text = respond_text[:4000] + '...'
                         respond_text += '```'
-                        
                     else:
-                        # NOTES: try using stemmer
-                        # this stemmer only support ascii
-                        try:
-                            w_ = STEMMER.stem(w.encode('ascii'))
-                            df = DICT[DICT['kata_dasar'].str.lower().str.strip() == w_]
-                        except UnicodeEncodeError:
-                            df = pd.DataFrame()
-                        
-                        if not df.empty:
-                            respond_text = '_%s_\n' % (w)
-                            respond_text += '```text\n'
-                            for k,v in enumerate(df['arti']):
-                                respond_text += '[%s] %s\n' % (k+1, v.decode('utf-8'))
-                            # TODOS: limit string len
-                            if len(respond_text) > 4000:
-                                respond_text = respond_text[:4000] + '...'
-                            respond_text += '```'
-                        else:
-                            respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
+                        respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
 
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                                  'text': respond_text,
