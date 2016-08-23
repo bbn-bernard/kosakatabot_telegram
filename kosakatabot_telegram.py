@@ -135,7 +135,7 @@ while True:
                             respond_text = respond_text[:4000] + '...'
                         respond_text += '```'
                     else:
-                        respond_text = 'kata "%s" tidak ditemukan' % (word_to_search)
+                        respond_text = 'kata "%s" tidak ditemukan' % (query)
 
                     json_request('sendMessage', {'chat_id': result['message']['chat']['id'],
                                                  'text': respond_text,
