@@ -62,7 +62,8 @@ def json_request(method, payload):
     result = False
     try:
         res = urllib2.urlopen(request)
-        result = res.read()
+        body = res.read()
+        result = json.loads(body)
     except KeyboardInterrupt:
         raise
     except:
@@ -73,8 +74,7 @@ def json_request(method, payload):
 last_update_id = 0
 
 while True:
-    body = json_request('getUpdates', {'offset': last_update_id})
-    updates = json.loads(body)
+    updates = json_request('getUpdates', {'offset': last_update_id})
 
     if not updates:
         time.sleep(5)
